@@ -5,7 +5,7 @@ protocol CodeBlockItemSyntaxVisiting {
         _ node: CodeBlockItemSyntax,
         graphDependencies: inout [String: Set<String>]
     ) -> SyntaxVisitorContinueKind
-    
+
     func visitCode(
         _ node: MemberBlockItemSyntax,
         containerName: String,
@@ -15,15 +15,15 @@ protocol CodeBlockItemSyntaxVisiting {
 
 final class CodeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting {
     let moduleName: String?
-    
+
     init(moduleName: String?) {
         self.moduleName = moduleName
     }
-    
+
     func visitCode(
         _ node: MemberBlockItemSyntax,
         containerName: String,
-        graphDependencies: inout [String : Set<String>]
+        graphDependencies: inout [String: Set<String>]
     ) -> SyntaxVisitorContinueKind {
         var name: String?
         var memberBlock: MemberBlockSyntax?
@@ -43,9 +43,10 @@ final class CodeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting {
         default:
             break
         }
-        
+
         if let name,
-           let memberBlock {
+           let memberBlock
+        {
             if var set = graphDependencies[containerName] {
                 set.insert(containerName.appending(".").appending(name))
                 graphDependencies[containerName] = set
@@ -61,17 +62,17 @@ final class CodeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting {
         }
         return .visitChildren
     }
-    
+
     func visitCode(
         _ node: CodeBlockItemSyntax,
         graphDependencies: inout [String: Set<String>]
     ) -> SyntaxVisitorContinueKind {
         var name: String?
         var memberBlock: MemberBlockSyntax?
-        var isExtension: Bool = false
-        
+        var isExtension = false
+
         switch node.item {
-        case .decl(let declSyntax):
+        case let .decl(declSyntax):
             switch declSyntax.kind {
             case .structDecl:
                 let structDecl = node.item.as(StructDeclSyntax.self)
@@ -96,9 +97,10 @@ final class CodeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting {
         default:
             break
         }
-        
+
         if var name,
-           let memberBlock {
+           let memberBlock
+        {
             if isExtension {
                 var index = 0
                 while graphDependencies.keys.contains(name + "Ext\(index)") {
@@ -115,7 +117,7 @@ final class CodeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting {
         }
         return .visitChildren
     }
-    
+
     private func diveInto(
         name: String,
         memberBlock: MemberBlockSyntax,
@@ -127,9 +129,8 @@ final class CodeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting {
             codeBlockItemSyntaxVisitor: self
         )
         definitionVisitor.walk(memberBlock)
-        graphDependencies.merge(definitionVisitor.graphDependencies, uniquingKeysWith: { (old, new) in
+        graphDependencies.merge(definitionVisitor.graphDependencies, uniquingKeysWith: { old, new in
             old.union(new)
         })
     }
 }
-

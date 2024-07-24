@@ -18,7 +18,7 @@ let package = Package(
         .package(url: "https://github.com/SwiftDocOrg/GraphViz", from: "0.4.1"),
         .package(url: "https://github.com/tuist/XcodeProj", from: "8.20.0"),
         .package(url: "https://github.com/ileitch/swift-indexstore", from: "9.0.4"),
-        .package(url: "https://github.com/rofle100lvl/periphery.git", branch: "SourceGraphPublic")
+        .package(url: "https://github.com/rofle100lvl/periphery.git", branch: "SourceGraphPublic"),
     ],
     targets: [
         .target(
@@ -71,6 +71,6 @@ let package = Package(
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
             ]
-        )
+        ),
     ]
 )

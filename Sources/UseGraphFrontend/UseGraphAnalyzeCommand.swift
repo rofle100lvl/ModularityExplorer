@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
-import Utils
-import UseGraphStaticAnalysis
 import UseGraphCore
+import UseGraphStaticAnalysis
+import Utils
 
 struct EdgeNode: Hashable {
     let name: String
@@ -17,30 +17,30 @@ struct Edge {
 }
 
 public struct UseGraphAnalyzeCommand: AsyncParsableCommand {
-    public init() { }
-    
+    public init() {}
+
     public static let configuration = CommandConfiguration(
         commandName: "usage_graph_analyze",
         abstract: "Command to build graph of usage.",
         version: "0.0.1"
     )
-    
+
     @Argument(help: "Path to project (.xcodeproj)")
     var projectPath: String? = nil
-    
+
     @Argument(help: "Paths to folder with sources - \"path1,path2,path3\"")
     var folderPaths: String? = nil
-    
+
     @Option(help: "Use if you want to exclude any entity names")
     var excludedNames: String? = nil
-    
+
     @Option(help: "Use if you want to exclude any targets")
     var excludedTargets: String? = nil
-    
+
     public func run() async throws {
         var projectURL: URL?
         var folderURLs: [String] = []
-        
+
         if let projectPath {
             projectURL = URL(string: projectPath)
         }
@@ -52,9 +52,9 @@ public struct UseGraphAnalyzeCommand: AsyncParsableCommand {
         } else {
             throw PathError.pathIsNotCorrect
         }
-        
+
         guard let projectURL else { throw PathError.pathIsNotCorrect }
-        
+
         var scanResults = try await InitScanner.scan(url: projectURL, excludedModules: excludedTargets?.split(separator: ",").map { String($0) } ?? [])
             .map(\.fileScanResult)
             .reduce([String: Node]()) { result, element in
@@ -66,13 +66,13 @@ public struct UseGraphAnalyzeCommand: AsyncParsableCommand {
                     )
                 })
             }
-        
+
         if let excludedNames {
-            excludedNames.split(separator: ", ").forEach {
-                scanResults.removeValue(forKey: String($0))
+            for item in excludedNames.split(separator: ", ") {
+                scanResults.removeValue(forKey: String(item))
             }
         }
-        
+
         var results = scanResults
         results = results
             .reduce([String: Node]()) { result, element in
@@ -91,20 +91,20 @@ public struct UseGraphAnalyzeCommand: AsyncParsableCommand {
                 )
                 return newResult
             }
-        
+
         var counter = 0
         for folderPath in folderURLs {
             let edgesInFolder = results.filter {
-                return $0.value.fileName.matches(.init("\(folderPath).*"))
+                $0.value.fileName.matches(.init("\(folderPath).*"))
             }
-            
+
             let connectionGraph = edgesInFolder.reduce([String: Node]()) { result, element in
                 var newResult = result
                 let newSet = element.value.connectedTo.filter {
-                    return results[$0]?.fileName.matches("^(?!\(folderPath)).*") ?? false && results[$0]?.moduleName == element.value.moduleName
+                    results[$0]?.fileName.matches("^(?!\(folderPath)).*") ?? false && results[$0]?.moduleName == element.value.moduleName
                 }
-                newSet.forEach {
-                    newResult[$0] = results[$0].map { node in
+                for item in newSet {
+                    newResult[item] = results[item].map { node in
                         Node(moduleName: node.moduleName, fileName: node.fileName, connectedTo: Set<String>())
                     }
                 }
@@ -115,7 +115,7 @@ public struct UseGraphAnalyzeCommand: AsyncParsableCommand {
                 )
                 return newResult
             }
-            
+
             let edges = connectionGraph
                 .map { element in
                     var edges: [Edge] = []
@@ -131,7 +131,7 @@ public struct UseGraphAnalyzeCommand: AsyncParsableCommand {
                     return edges
                 }
                 .flatMap { $0 }
-            
+
             guard let url = URL(string: folderPath) else {
                 return
             }
@@ -145,11 +145,10 @@ public struct UseGraphAnalyzeCommand: AsyncParsableCommand {
                 svgString: String(data: data, encoding: .utf8) ?? ""
             )
             guard let edgesData = htmlString.data(using: .utf8) else { fatalError() }
-            
+
             FileManager.default.createFile(atPath: url.appending(path: "module-info.html").path(), contents: edgesData)
-            
+
             print(folderPath + " - " + String(edges.count))
-           
         }
         print(counter)
     }
@@ -165,8 +164,9 @@ extension Node {
         )
     }
 }
+
 extension String {
     func matches(_ regex: String) -> Bool {
-        return self.range(of: regex, options: .regularExpression, range: nil, locale: nil) != nil
+        return range(of: regex, options: .regularExpression, range: nil, locale: nil) != nil
     }
 }

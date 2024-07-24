@@ -3,12 +3,12 @@ import SwiftSyntax
 final class DefinitionVisitor: SyntaxVisitor {
     var graphDependencies = [String: Set<String>]()
     private let codeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisitor
-    
+
     init(moduleName: String? = nil) {
         codeBlockItemSyntaxVisitor = CodeBlockItemSyntaxVisitor(moduleName: moduleName)
         super.init(viewMode: .all)
     }
-    
+
     override func visit(_ node: CodeBlockItemSyntax) -> SyntaxVisitorContinueKind {
         codeBlockItemSyntaxVisitor.visitCode(
             node,
@@ -22,16 +22,16 @@ final class EntityVisitor: SyntaxVisitor {
     var graphDependencies = [String: Set<String>]()
     let moduleName: String?
     private let codeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting
-    
+
     var finalEntityName: String {
         moduleName == nil ? entityName : moduleName ?? "" + "." + entityName
     }
-    
+
     init(
         entityName: String,
         moduleName: String? = nil,
         codeBlockItemSyntaxVisitor: CodeBlockItemSyntaxVisiting,
-        graphDependencies: [String : Set<String>] = [String: Set<String>]()
+        graphDependencies: [String: Set<String>] = [String: Set<String>]()
     ) {
         self.entityName = entityName
         self.graphDependencies = graphDependencies
@@ -39,27 +39,28 @@ final class EntityVisitor: SyntaxVisitor {
         self.moduleName = moduleName
         super.init(viewMode: .all)
     }
-    
+
     override func visit(_ node: CodeBlockItemSyntax) -> SyntaxVisitorContinueKind {
         codeBlockItemSyntaxVisitor.visitCode(
             node,
             graphDependencies: &graphDependencies
         )
     }
-    
+
     override func visit(_ node: MemberBlockItemSyntax) -> SyntaxVisitorContinueKind {
         codeBlockItemSyntaxVisitor.visitCode(
             node,
-            containerName: self.entityName,
+            containerName: entityName,
             graphDependencies: &graphDependencies
         )
     }
-    
+
     override func visit(_ token: TokenSyntax) -> SyntaxVisitorContinueKind {
         if let firstSymbol = token.text.first,
            case .identifier = token.tokenKind,
            firstSymbol.isUppercase,
-           !self.excludedTypes.contains(token.text) {
+           !self.excludedTypes.contains(token.text)
+        {
             if var set = graphDependencies[entityName] {
                 set.insert(token.text)
                 graphDependencies[entityName] = set
@@ -160,8 +161,7 @@ extension EntityVisitor {
             "PreviewModifier",
             "Double",
             "CGFloat",
-            "IdentifiedArrayOf"
+            "IdentifiedArrayOf",
         ]
     }
 }
-

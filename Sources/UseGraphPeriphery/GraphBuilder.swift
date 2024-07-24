@@ -11,10 +11,11 @@ struct EdgeCSV: CSVRepresentable {
     var fields: [String] {
         ["Source", "Target", "Type"]
     }
+
     let source: String
     let target: String
     let type = "directed"
-    
+
     var csvRepresentation: String {
         source + "," + target + "," + type
     }
@@ -24,27 +25,26 @@ enum OutputFormat {
     case svg
     case png
     case gv
-    
+
     public static func parse(format: String) throws -> OutputFormat {
         switch format.lowercased() {
         case "svg":
-                .svg
+            .svg
         case "png":
-                .png
+            .png
         case "gv":
-                .gv
+            .gv
         default:
             throw FormatError.formatIsNotCorrect
         }
     }
 }
 
-
 final class GraphBuilder {
     static let shared = GraphBuilder()
-    
-    private init() { }
-    
+
+    private init() {}
+
     private func createCSV(from recArray: [CSVRepresentable]) -> String {
         guard let fields = recArray.first?.fields else { return "" }
         var csvString = fields.joined(separator: ",") + "\n"
@@ -53,15 +53,15 @@ final class GraphBuilder {
         }
         return csvString
     }
-    
+
     func csvBuildGraph(edges: [UseGraphPeriphery.Edge]) {
         var uniqueSet = Set<Node>()
         edges.map { [$0.from, $0.to] }.flatMap { $0 }.forEach { uniqueSet.insert($0) }
-        
+
         let edges = edges.map { EdgeCSV(source: $0.from.id, target: $0.to.id) }
         let edgesCSV = createCSV(from: edges)
         let nodesCSV = createCSV(from: Array(uniqueSet))
-        
+
         let nodesUrl = URL(fileURLWithPath: #file).deletingLastPathComponent().appending(path: "Nodes.csv")
         let edgesUrl = URL(fileURLWithPath: #file).deletingLastPathComponent().appending(path: "Edges.csv")
 
@@ -70,7 +70,7 @@ final class GraphBuilder {
         print(FileManager.default.createFile(atPath: edgesUrl.path(), contents: edgesData))
         print(FileManager.default.createFile(atPath: nodesUrl.path(), contents: nodesData))
     }
-    
+
     func buildGraph(edges: [Edge], format: OutputFormat) async throws {
         switch format {
         case .svg, .png, .gv:
@@ -80,61 +80,58 @@ final class GraphBuilder {
             let url = URL(fileURLWithPath: #file).deletingLastPathComponent().appending(path: "Graph.\(format.rawValue)")
             guard var fileContents = String(data: data, encoding: .utf8) else { fatalError() }
             if format == .gv {
-                fileContents = self.removeSecondAndThirdLine(string: fileContents)
+                fileContents = removeSecondAndThirdLine(string: fileContents)
             }
-            
+
             print(FileManager.default.createFile(atPath: url.path(), contents: fileContents.data(using: .utf8)))
             Task {
                 System.shared.run("open \(url.path())")
             }
         }
     }
-    
-    func buildGraphData(edges: [Edge], format: Format) async throws -> Data  {
+
+    func buildGraphData(edges: [Edge], format: Format) async throws -> Data {
         var graph = Graph(directed: true)
-        
-        edges.forEach {
+
+        for edge in edges {
             graph.append(GraphViz.Edge(
-                from: GraphViz.Node($0.from.id), 
-                to: GraphViz.Node($0.to.id)
+                from: GraphViz.Node(edge.from.id),
+                to: GraphViz.Node(edge.to.id)
             ))
         }
 
         print("Start building graph...")
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             graph.render(using: .fdp, to: format) { [weak self] result in
                 guard self != nil else { return }
                 switch result {
-                case .success(let data):
+                case let .success(data):
                     continuation.resume(returning: data)
-                case .failure(let failure):
+                case let .failure(failure):
                     continuation.resume(throwing: BuildGraphError.buildGraphError)
                     print(failure)
                 }
             }
         }
     }
-    
+
     private func removeSecondAndThirdLine(string: String) -> String {
         var lines = string.split(separator: "\n")
-        lines.removeSubrange(1...2)
+        lines.removeSubrange(1 ... 2)
         return lines.joined(separator: "\n")
     }
-    
-    
 }
 
 extension GraphBuilder {
     func mapFormat(format: OutputFormat) -> Format? {
         switch format {
         case .svg:
-                .svg
+            .svg
         case .png:
-                .png
+            .png
         case .gv:
-                .gv
+            .gv
         }
     }
 }
-

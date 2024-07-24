@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  UseGraphCommand.swift
+//
 //
 //  Created by Roman Gorbenko on 08.06.2024.
 //
@@ -10,15 +10,14 @@ import UseGraphFrontend
 
 @main
 public struct UseGraphCommand: AsyncParsableCommand {
-    public init() { }
-    
+    public init() {}
+
     public static let configuration = CommandConfiguration(
-      commandName: "",
-      abstract: "Swift CLI to work with Use Graph tool",
-      version: "0.0.1",
-      subcommands: [
-        UseGraphFrontendCommand.self
-      ]
+        commandName: "",
+        abstract: "Swift CLI to work with Use Graph tool",
+        version: "0.0.1",
+        subcommands: [
+            UseGraphFrontendCommand.self,
+        ]
     )
 }
-

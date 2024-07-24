@@ -1,10 +1,9 @@
 import Foundation
 
-enum FormatError: Error {
+public enum FormatError: Error {
     case formatIsNotCorrect
 }
 
-enum BuildGraphError: Error {
+public enum BuildGraphError: Error {
     case buildGraphError
-    
 }

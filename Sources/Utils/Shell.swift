@@ -1,5 +1,5 @@
-import os
 import Foundation
+import os
 
 final class ReadableStream {
     private let cmd: String
@@ -47,9 +47,7 @@ final class ReadableStream {
 }
 
 open class Shell {
-    public static let shared: Shell = {
-        return Shell(environment: ProcessInfo.processInfo.environment, logger: Logger())
-    }()
+    public static let shared: Shell = .init(environment: ProcessInfo.processInfo.environment, logger: Logger())
 
     private var tasks: Set<Process> = []
     private var tasksQueue = DispatchQueue(label: "Shell.tasksQueue")
@@ -57,7 +55,7 @@ open class Shell {
     private let environment: [String: String]
     private let logger: Logger
 
-    required public init(environment: [String: String], logger: Logger) {
+    public required init(environment: [String: String], logger: Logger) {
         self.environment = environment
         self.logger = logger
     }
@@ -77,12 +75,12 @@ open class Shell {
                 let pair = line.split(separator: "=", maxSplits: 1)
                 return (String(pair.first ?? ""), String(pair.last ?? ""))
             }
-            .reduce(into: [String: String]()) { (result, pair) in
+            .reduce(into: [String: String]()) { result, pair in
                 result[pair.0] = pair.1
             }
 
         let preservedKeys = ["PATH", "DEVELOPER_DIR"]
-        preservedKeys.forEach { key in
+        for key in preservedKeys {
             if let value = environment[key] {
                 newEnv[key] = value
             }
@@ -129,7 +127,8 @@ open class Shell {
             cmd: launchPath,
             args: newArgs,
             fileHandle: pipe.fileHandleForReading,
-            task: task)
+            task: task
+        )
 
         let status = try readable.terminationStatus()
         let output = try readable.allOutput()

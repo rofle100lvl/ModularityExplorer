@@ -1,20 +1,21 @@
-import XcodeProj
 import Foundation
+import XcodeProj
 
-final class XcodeprojManager {
+enum XcodeprojManager {
     static func getAllModules(projUrl: URL) throws -> [Module] {
         let proj = try XcodeProj(path: .init(projUrl.path()))
         return proj.pbxproj.nativeTargets
             .map {
                 let moduleName = $0.name
                 var moduleFiles = [URL]()
-                
+
                 let sourceBuildPhase = $0.buildPhases.filter {
                     $0 is PBXSourcesBuildPhase
                 }.first
-                
+
                 if let sourceBuildPhase,
-                   let files = sourceBuildPhase.files {
+                   let files = sourceBuildPhase.files
+                {
                     moduleFiles = files
                         .map {
                             do {
@@ -28,7 +29,7 @@ final class XcodeprojManager {
                             URL(fileURLWithPath: $0)
                         }
                 }
-                
+
                 return Module(moduleName: moduleName, files: moduleFiles)
             }
     }
